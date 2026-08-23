@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "title": "Video Title",
+    "description": "Short description (optional)",
+    "category": "General",
+    "filename": "video1.mp4",
+    "uploadDate": "2026-08-13"
+  }
+]
