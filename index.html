@@ -1,658 +1,493 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎵 wave · music player</title>
-    <!-- Font Awesome (free icons) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NEEV CYBER EXPERT — Video Vault</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-        body {
-            min-height: 100vh;
-            background: linear-gradient(145deg, #0b0e1a 0%, #1a1f2e 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 1.5rem;
-        }
+  :root{
+    --void:#0A0605;
+    --void-deep:#050303;
+    --paper:#F4EFEC;
+    --muted:#9C8E8A;
+    --line:#2A1E1C;
+    --red:#FF3B3B;
+    --red-deep:#C81E1E;
+    --amber:#FF9A3D;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--void); color:var(--paper);
+    font-family:'Inter',sans-serif; min-height:100vh; overflow-x:hidden;
+  }
+  ::selection{background:var(--red);color:var(--void);}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation:none !important; transition:none !important;}
+  }
 
-        /* card */
-        .player-card {
-            max-width: 480px;
-            width: 100%;
-            background: rgba(22, 28, 46, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 3rem 3rem 2.5rem 2.5rem;
-            padding: 2rem 1.8rem 2.2rem;
-            box-shadow: 0 25px 50px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
-            transition: all 0.2s ease;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-        }
+  #matrixCanvas{position:fixed; inset:0; z-index:-2; opacity:0.14; pointer-events:none;}
+  #bg3d{position:fixed; inset:0; z-index:-1; pointer-events:none;}
+  .bg-vignette{
+    position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 0%, rgba(10,6,5,0) 0%, rgba(10,6,5,0.6) 60%, rgba(10,6,5,0.96) 100%);
+  }
+  .content{position:relative; z-index:1;}
 
-        /* header */
-        .player-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #b9c8e6;
-            margin-bottom: 1.8rem;
-            padding: 0 0.2rem;
-        }
+  .hazard-strip{
+    height:6px;
+    background:repeating-linear-gradient(45deg, var(--red) 0 14px, #1a1010 14px 28px);
+  }
 
-        .player-header h2 {
-            font-weight: 500;
-            font-size: 1.2rem;
-            letter-spacing: 0.5px;
-            background: linear-gradient(135deg, #d6e2ff, #a0b9f0);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+  header{
+    position:sticky; top:0; z-index:20;
+    background:rgba(10,6,5,0.75); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line); padding:14px 20px;
+  }
+  .header-inner{max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .logo-mark{
+    width:16px;height:16px; border:1.5px solid var(--red);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; box-shadow:0 0 12px rgba(255,59,59,0.55);
+    font-size:10px; font-weight:800; color:var(--red);
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand h1{font-size:16px; font-weight:700; margin:0; letter-spacing:0.5px;}
+  .brand p{font-size:10.5px; color:var(--muted); margin:3px 0 0;}
+  #search{
+    flex:1; min-width:180px; background:rgba(5,3,3,0.7); border:1px solid var(--line); color:var(--paper);
+    padding:10px 14px; border-radius:6px; font-size:14px; backdrop-filter:blur(6px);
+  }
+  #search::placeholder{color:var(--muted);}
 
-        .player-header h2 i {
-            color: #6d8cff;
-            font-size: 1.1rem;
-        }
+  main{max-width:1100px; margin:0 auto; padding:0 20px 80px;}
 
-        .header-actions i {
-            font-size: 1.2rem;
-            color: #7b8ec0;
-            cursor: default;
-            transition: 0.2s;
-            margin-left: 0.6rem;
-            opacity: 0.7;
-        }
+  .hero{padding:44px 0 0; border-bottom:1px solid var(--line);}
+  .eyebrow{color:var(--red); font-size:12px; letter-spacing:2px; margin:0;}
+  .glitch{position:relative; display:inline-block;}
+  .hero h2{
+    font-size:clamp(30px,6vw,50px); font-weight:700; line-height:1.02;
+    margin:14px 0 12px; max-width:680px;
+    text-shadow:0 0 26px rgba(255,59,59,0.25);
+  }
+  .hero p{color:var(--muted); font-size:15px; max-width:520px; margin:0; line-height:1.6;}
 
-        /* cover art */
-        .cover-wrapper {
-            position: relative;
-            border-radius: 2.2rem;
-            overflow: hidden;
-            margin-bottom: 2rem;
-            box-shadow: 0 20px 35px -5px #03050b, 0 0 0 1px rgba(255, 255, 255, 0.06);
-        }
+  .warn-box{
+    display:flex; gap:10px; align-items:flex-start;
+    background:rgba(255,59,59,0.06); border:1px solid rgba(255,59,59,0.35);
+    border-radius:8px; padding:12px 14px; margin-top:20px; max-width:560px;
+  }
+  .warn-box .ic{color:var(--red); font-size:16px; flex-shrink:0;}
+  .warn-box p{margin:0; font-size:12px; color:#D8B8B0; line-height:1.5;}
 
-        .cover-wrapper img {
-            display: block;
-            width: 100%;
-            aspect-ratio: 1/1;
-            object-fit: cover;
-            background: #1f263b;
-            transition: transform 0.3s ease;
-        }
+  .social-links{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;}
+  .social-links a{
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(5,3,3,0.6); border:1px solid var(--line); color:var(--paper);
+    padding:9px 16px; border-radius:6px; font-size:13px; font-weight:500;
+    text-decoration:none; transition:border-color .15s, color .15s; backdrop-filter:blur(6px);
+  }
+  .social-links a:hover{border-color:var(--red); color:var(--red);}
 
-        .cover-wrapper:hover img {
-            transform: scale(1.01);
-        }
+  .stats{display:flex; gap:32px; margin-top:24px;}
+  .stat b{display:block; font-size:26px; font-weight:700; font-family:'Space Grotesk',sans-serif; color:var(--red);}
+  .stat span{font-size:11.5px; color:var(--muted);}
 
-        /* track info */
-        .track-info {
-            text-align: center;
-            margin-bottom: 1.8rem;
-        }
+  .marquee-wrap{border-top:1px solid var(--line); margin-top:24px; overflow:hidden; padding:12px 0;}
+  .marquee-track{display:flex; width:max-content; animation:vtx-marquee 18s linear infinite;}
+  @keyframes vtx-marquee{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+  .marquee-item{display:flex; align-items:center; gap:22px; padding:0 22px; color:var(--muted); font-size:11.5px; letter-spacing:1.5px; white-space:nowrap;}
+  .marquee-item .dot{color:var(--red);}
 
-        .track-info h3 {
-            font-size: 1.6rem;
-            font-weight: 600;
-            color: #f0f3fc;
-            letter-spacing: -0.3px;
-            margin-bottom: 0.25rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+  .filters{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:24px;}
+  .chip{
+    background:rgba(5,3,3,0.6); border:1px solid var(--line); color:var(--muted);
+    padding:7px 14px; border-radius:6px; font-size:12px; cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s; backdrop-filter:blur(6px);
+  }
+  .chip.active{background:var(--red); border-color:var(--red); color:#1a0505; font-weight:700;}
 
-        .track-info p {
-            font-size: 1rem;
-            color: #95a9d9;
-            font-weight: 400;
-            letter-spacing: 0.2px;
-        }
+  .grid{
+    display:grid; gap:16px; margin-top:22px;
+    grid-template-columns:repeat(auto-fill, minmax(240px,1fr));
+  }
+  .card{
+    background:rgba(5,3,3,0.85); border:1px solid var(--line);
+    border-radius:10px; overflow:hidden; display:flex; flex-direction:column;
+    transition:border-color .15s, transform .15s; backdrop-filter:blur(8px);
+  }
+  .card:hover{border-color:var(--red); transform:translateY(-2px);}
+  .thumb-wrap{
+    position:relative; width:100%; aspect-ratio:16/9; overflow:hidden;
+    background:var(--void-deep); cursor:pointer;
+  }
+  .thumb-wrap video{width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;}
+  .play-overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(10,6,5,0.35);
+  }
+  .play-btn{
+    width:46px; height:46px; border-radius:50%; background:rgba(10,6,5,0.75);
+    border:1.5px solid var(--red); display:flex; align-items:center; justify-content:center;
+    color:var(--red); font-size:16px;
+  }
+  .cat-badge{
+    position:absolute; top:8px; left:8px; background:rgba(10,6,5,0.75);
+    color:var(--red); font-size:9.5px; font-weight:700; letter-spacing:0.5px;
+    padding:4px 8px; border-radius:4px; backdrop-filter:blur(4px);
+  }
+  .card-body{padding:12px 14px 14px;}
+  .card h3{font-size:14.5px; font-weight:600; margin:0; line-height:1.3; font-family:'Space Grotesk',sans-serif;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .card-foot{display:flex; align-items:center; justify-content:space-between; margin-top:10px;}
+  .meta{color:#7A6864; font-size:10.5px;}
+  .dl-btn{
+    background:var(--red); color:#1a0505; border:none;
+    padding:6px 12px; border-radius:6px; font-size:11px; font-weight:800;
+    cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:5px;
+    transition:opacity .15s, box-shadow .15s;
+  }
+  .dl-btn:hover{opacity:0.9; box-shadow:0 0 16px rgba(255,59,59,0.5);}
 
-        /* progress bar */
-        .progress-area {
-            margin-bottom: 1.5rem;
-        }
+  .empty{text-align:center; padding:90px 20px; color:var(--muted);}
+  .empty .icon{
+    width:60px;height:60px; border:1.5px solid var(--line);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 24px;
+  }
+  .empty h3{color:var(--paper); font-size:19px; margin:0 0 6px; font-family:'Space Grotesk',sans-serif;}
 
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: #2a3150;
-            border-radius: 20px;
-            cursor: pointer;
-            position: relative;
-            transition: height 0.1s ease;
-        }
+  footer{
+    max-width:1100px; margin:0 auto; padding:26px 20px;
+    border-top:1px solid var(--line); color:#5A4A46; font-size:11px;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
 
-        .progress-bar:hover {
-            height: 8px;
-        }
+  .lightbox{
+    position:fixed; inset:0; z-index:50; background:rgba(3,2,2,0.96);
+    display:none; align-items:center; justify-content:center; padding:20px;
+    backdrop-filter:blur(6px);
+  }
+  .lightbox.open{display:flex;}
+  .lightbox video{max-width:100%; max-height:70vh; border-radius:8px; border:1px solid var(--line); background:#000;}
+  .lightbox-panel{display:flex; flex-direction:column; align-items:center; gap:14px; max-width:90vw;}
+  .lightbox-info{text-align:center;}
+  .lightbox-info h3{font-family:'Space Grotesk',sans-serif; font-size:17px; margin:0 0 4px;}
+  .lightbox-info p{color:var(--muted); font-size:12.5px; margin:0;}
+  .lightbox-close{
+    position:absolute; top:18px; right:18px; background:rgba(5,3,3,0.7);
+    border:1px solid var(--line); color:var(--paper); width:38px; height:38px;
+    border-radius:50%; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
 
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #7b9aff, #b6cbff);
-            border-radius: 20px;
-            position: relative;
-            transition: width 0.1s linear;
-            box-shadow: 0 0 10px #6a8aff66;
-        }
-
-        .time-indicators {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 0.4rem;
-            font-size: 0.8rem;
-            color: #7d8fba;
-            font-weight: 400;
-            letter-spacing: 0.2px;
-            padding: 0 2px;
-        }
-
-        /* controls */
-        .controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1.2rem;
-            margin: 1.8rem 0 1.2rem;
-        }
-
-        .controls button {
-            background: transparent;
-            border: none;
-            color: #d3defa;
-            font-size: 1.5rem;
-            width: 3.2rem;
-            height: 3.2rem;
-            border-radius: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: 0.15s ease;
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.03);
-        }
-
-        .controls button i {
-            filter: drop-shadow(0 2px 4px #00000033);
-        }
-
-        .controls button:hover {
-            background: #2e365a;
-            color: white;
-            transform: scale(1.03);
-            border-color: #4b5a8a;
-        }
-
-        .controls button:active {
-            transform: scale(0.94);
-        }
-
-        .play-btn {
-            background: linear-gradient(135deg, #4f6ef7, #7b9aff) !important;
-            color: white !important;
-            width: 4.2rem !important;
-            height: 4.2rem !important;
-            font-size: 2rem !important;
-            border: none !important;
-            box-shadow: 0 10px 20px -5px #1f2b70, 0 0 0 1px rgba(255, 255, 255, 0.1);
-        }
-
-        .play-btn:hover {
-            background: linear-gradient(135deg, #5f7cff, #8aacff) !important;
-            transform: scale(1.05);
-            box-shadow: 0 12px 28px -5px #2f3f96;
-        }
-
-        /* extra actions (like / shuffle) */
-        .extra-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 0.6rem;
-            padding: 0 0.2rem;
-        }
-
-        .extra-actions i {
-            color: #6378af;
-            font-size: 1.1rem;
-            transition: 0.2s;
-            cursor: default;
-            opacity: 0.6;
-        }
-
-        .extra-actions i:hover {
-            color: #b2c8ff;
-            opacity: 1;
-        }
-
-        .extra-actions .right-icons i {
-            margin-left: 0.9rem;
-        }
-
-        /* playlist (mini) */
-        .playlist {
-            margin-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-            padding-top: 1.2rem;
-        }
-
-        .playlist-item {
-            display: flex;
-            align-items: center;
-            padding: 0.6rem 0.8rem;
-            border-radius: 1.2rem;
-            background: transparent;
-            transition: 0.15s ease;
-            cursor: default;
-            margin-bottom: 0.2rem;
-        }
-
-        .playlist-item:hover {
-            background: #262e4b;
-        }
-
-        .playlist-item.active {
-            background: #2d3560;
-            border-left: 3px solid #7b9aff;
-        }
-
-        .playlist-item .index {
-            width: 2rem;
-            color: #6d81b5;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .playlist-item .p-info {
-            flex: 1;
-        }
-
-        .playlist-item .p-info .p-title {
-            color: #e9efff;
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
-
-        .playlist-item .p-info .p-artist {
-            color: #8497c9;
-            font-size: 0.75rem;
-        }
-
-        .playlist-item .duration {
-            color: #6579ab;
-            font-size: 0.75rem;
-            background: #1b223a;
-            padding: 0.2rem 0.6rem;
-            border-radius: 30px;
-        }
-
-        .playlist-item.active .p-title {
-            color: white;
-        }
-
-        .playlist-item.active .duration {
-            background: #3b4677;
-            color: #d6e2ff;
-        }
-
-        /* responsive */
-        @media (max-width: 480px) {
-            .player-card {
-                padding: 1.5rem 1.2rem;
-                border-radius: 2.2rem;
-            }
-            .track-info h3 {
-                font-size: 1.3rem;
-            }
-            .controls button {
-                width: 2.8rem;
-                height: 2.8rem;
-                font-size: 1.2rem;
-            }
-            .play-btn {
-                width: 3.6rem !important;
-                height: 3.6rem !important;
-                font-size: 1.6rem !important;
-            }
-        }
-    </style>
+  @media (max-width:520px){ .stats{gap:20px;} }
+</style>
 </head>
 <body>
 
-<div class="player-card" id="app">
-    <!-- header -->
-    <div class="player-header">
-        <h2><i class="fas fa-headphones-alt"></i> wave</h2>
-        <div class="header-actions">
-            <i class="fas fa-bolt"></i>
-            <i class="fas fa-ellipsis-h"></i>
-        </div>
+<canvas id="matrixCanvas"></canvas>
+<canvas id="bg3d"></canvas>
+<div class="bg-vignette"></div>
+
+<div class="content">
+<div class="hazard-strip"></div>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo-mark">▲</div>
+      <div>
+        <h1 class="display">KRUTIK CYBER EXPERT</h1>
+        <p class="mono" id="countLabel">0 Videos · Free Vault</p>
+      </div>
+    </div>
+    <input id="search" type="text" placeholder="Search by title or topic…" />
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <p class="eyebrow mono">RESTRICTED ACCESS · FREE VAULT</p>
+    <h2 class="display">Every video,<br/>one click away.</h2>
+    <p>This is the KRUTIK CYBER EXPERT video vault — watch online or download, free anytime.</p>
+
+    <div class="warn-box">
+      <span class="ic">⚠</span>
+      <p>Sirf legal, apni khud ki ya rights-cleared videos hi upload karo. Kisi doosre insaan ko target/defame karne wala content strictly mana hai.</p>
     </div>
 
-    <!-- cover -->
-    <div class="cover-wrapper">
-        <img id="coverArt" src="https://picsum.photos/seed/jazz/400/400" alt="album cover">
+    <div class="social-links">
+      <a href="https://www.instagram.com/hacker_by_expert?igsh=MTZ0NmxzaXBiNWFpZQ==" target="_blank" rel="noopener noreferrer">📷 Instagram</a>
+      <a href="https://t.me/KRUTIK_CYBER_EXPERT" target="_blank" rel="noopener noreferrer">💬 Customer Support</a>
     </div>
 
-    <!-- track info -->
-    <div class="track-info">
-        <h3 id="trackTitle">Nightfall</h3>
-        <p id="trackArtist">Echo & the Veil</p>
+    <div class="stats">
+      <div class="stat"><b id="statTotal">0</b><span>Total Videos</span></div>
+      <div class="stat"><b id="statCats">0</b><span>Categories</span></div>
     </div>
 
-    <!-- progress -->
-    <div class="progress-area">
-        <div class="progress-bar" id="progressBar">
-            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
-        </div>
-        <div class="time-indicators">
-            <span id="currentTime">0:00</span>
-            <span id="totalTime">3:42</span>
-        </div>
+    <div class="marquee-wrap">
+      <div class="marquee-track" id="marqueeTrack"></div>
     </div>
+  </section>
 
-    <!-- main controls -->
-    <div class="controls">
-        <button id="prevBtn"><i class="fas fa-backward"></i></button>
-        <button class="play-btn" id="playBtn"><i class="fas fa-play" id="playIcon"></i></button>
-        <button id="nextBtn"><i class="fas fa-forward"></i></button>
-    </div>
+  <div class="filters" id="filters"></div>
 
-    <!-- extra actions -->
-    <div class="extra-actions">
-        <i class="fas fa-heart"></i>
-        <div class="right-icons">
-            <i class="fas fa-random"></i>
-            <i class="fas fa-repeat"></i>
-        </div>
-    </div>
+  <div id="grid" class="grid"></div>
+  <div id="emptyState" class="empty" style="display:none;">
+    <div class="icon">▶</div>
+    <h3 id="emptyTitle">No videos yet</h3>
+    <p id="emptyText">Check back soon — new videos are added regularly.</p>
+  </div>
+</main>
 
-    <!-- mini playlist -->
-    <div class="playlist" id="playlistContainer">
-        <!-- dynamic from JS -->
+<footer>
+  <span>KRUTIK CYBER EXPERT — all videos are free to watch and download.</span>
+  <span class="mono">FREE · FOREVER</span>
+</footer>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕</button>
+  <div class="lightbox-panel">
+    <video id="lightboxVideo" controls playsinline></video>
+    <div class="lightbox-info">
+      <h3 id="lightboxTitle"></h3>
+      <p id="lightboxDesc"></p>
     </div>
+    <a class="dl-btn" id="lightboxDownload" href="#" download>⬇ Download</a>
+  </div>
 </div>
 
 <script>
-    (function() {
-        // ---------- data ----------
-        const playlist = [
-            { title: "Nightfall", artist: "Echo & the Veil", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", duration: "3:42" },
-            { title: "Urban Drift", artist: "Lunar Pulse", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", duration: "4:01" },
-            { title: "Silent Waves", artist: "Aurora Sky", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", duration: "3:28" },
-            { title: "Neon Glow", artist: "Pixel Dream", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", duration: "3:55" }
-        ];
+  /* ---------- Matrix rain (red tint) ---------- */
+  (function initMatrixRain(){
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, columns, drops;
+    const chars = "01!?#%&×⚠▲$@";
+    const fontSize = 15;
+    function resize(){
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      columns = Math.floor(width / fontSize);
+      drops = new Array(columns).fill(1);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+    function draw(){
+      ctx.fillStyle = "rgba(5,3,3,0.1)";
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "#FF3B3B";
+      ctx.font = fontSize + "px monospace";
+      for (let i = 0; i < drops.length; i++){
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > height && Math.random() > 0.978) drops[i] = 0;
+        drops[i]++;
+      }
+    }
+    setInterval(draw, 50);
+  })();
 
-        // DOM refs
-        const coverImg = document.getElementById('coverArt');
-        const trackTitle = document.getElementById('trackTitle');
-        const trackArtist = document.getElementById('trackArtist');
-        const progressFill = document.getElementById('progressFill');
-        const currentTimeSpan = document.getElementById('currentTime');
-        const totalTimeSpan = document.getElementById('totalTime');
-        const playBtn = document.getElementById('playBtn');
-        const playIcon = document.getElementById('playIcon');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const progressBar = document.getElementById('progressBar');
-        const playlistContainer = document.getElementById('playlistContainer');
+  /* ---------- 3D network background (red/amber) ---------- */
+  (function initNetworkBG(){
+    if (typeof THREE === "undefined") return;
+    const canvas = document.getElementById('bg3d');
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 15;
 
-        // Audio element
-        const audio = new Audio();
-        audio.preload = 'metadata';
+    const count = window.innerWidth < 640 ? 55 : 90;
+    const nodes = [];
+    const positions = [];
+    for (let i = 0; i < count; i++){
+      const x = (Math.random() - 0.5) * 24;
+      const y = (Math.random() - 0.5) * 16;
+      const z = (Math.random() - 0.5) * 10;
+      nodes.push(new THREE.Vector3(x, y, z));
+      positions.push(x, y, z);
+    }
+    const pointGeo = new THREE.BufferGeometry();
+    pointGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const pointMat = new THREE.PointsMaterial({ color: 0xFF3B3B, size: 0.09, transparent: true, opacity: 0.85 });
+    const points = new THREE.Points(pointGeo, pointMat);
+    scene.add(points);
 
-        let currentTrackIndex = 0;
-        let isPlaying = false;
-        let isDragging = false;
-
-        // ---------- helper: format time (seconds -> mm:ss) ----------
-        function formatTime(seconds) {
-            if (isNaN(seconds) || seconds === Infinity) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    const linePositions = [];
+    for (let i = 0; i < nodes.length; i++){
+      for (let j = i + 1; j < nodes.length; j++){
+        if (nodes[i].distanceTo(nodes[j]) < 4.6){
+          linePositions.push(nodes[i].x, nodes[i].y, nodes[i].z, nodes[j].x, nodes[j].y, nodes[j].z);
         }
+      }
+    }
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+    const lineMat = new THREE.LineBasicMaterial({ color: 0xFF9A3D, transparent: true, opacity: 0.16 });
+    const lines = new THREE.LineSegments(lineGeo, lineMat);
+    scene.add(lines);
 
-        // ---------- load track ----------
-        function loadTrack(index) {
-            const track = playlist[index];
-            if (!track) return;
-            audio.src = track.src;
-            trackTitle.textContent = track.title;
-            trackArtist.textContent = track.artist;
-            // cover image (use picsum with seed)
-            coverImg.src = `https://picsum.photos/seed/${track.title.replace(/\s/g,'')}/400/400`;
-            totalTimeSpan.textContent = track.duration || '3:00';
-            // reset progress
-            progressFill.style.width = '0%';
-            currentTimeSpan.textContent = '0:00';
-            // update active playlist item
-            updatePlaylistActive(index);
-            // if audio is loaded, update duration
-            if (audio.readyState >= 2) {
-                totalTimeSpan.textContent = formatTime(audio.duration);
-            }
-        }
+    const icoGeo = new THREE.IcosahedronGeometry(4.2, 1);
+    const icoLines = new THREE.LineSegments(
+      new THREE.WireframeGeometry(icoGeo),
+      new THREE.LineBasicMaterial({ color: 0xFF3B3B, transparent: true, opacity: 0.22 })
+    );
+    scene.add(icoLines);
 
-        // ---------- play / pause ----------
-        function togglePlay() {
-            if (audio.paused) {
-                audio.play().catch(e => console.warn('play error', e));
-                isPlaying = true;
-                playIcon.className = 'fas fa-pause';
-            } else {
-                audio.pause();
-                isPlaying = false;
-                playIcon.className = 'fas fa-play';
-            }
-        }
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function animate(){
+      if (!reduceMotion){
+        points.rotation.y += 0.0009;
+        lines.rotation.y += 0.0009;
+        icoLines.rotation.y += 0.0016;
+        icoLines.rotation.x += 0.0007;
+      }
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  })();
 
-        // ---------- next / prev ----------
-        function nextTrack() {
-            currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
-            loadTrack(currentTrackIndex);
-            if (isPlaying) {
-                audio.play().catch(e => console.warn('autoplay error', e));
-            } else {
-                // if paused, still load but keep paused
-                audio.pause();
-            }
-        }
+  /* ---------- Video vault logic ---------- */
+  const TAG_COLORS = ["#FF3B3B", "#FF9A3D", "#FFD23D", "#FF5B8A", "#B23DFF", "#3DD9FF"];
+  function hashStr(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h; }
+  function tagColor(cat){ return TAG_COLORS[hashStr(cat || "General") % TAG_COLORS.length]; }
+  function formatDate(iso){
+    try{ return new Date(iso).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }); }
+    catch(e){ return "—"; }
+  }
+  function escapeHtml(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+  function videoSrc(v){
+    return v.filename.startsWith("http") ? v.filename : `videos/${encodeURIComponent(v.filename)}`;
+  }
 
-        function prevTrack() {
-            currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
-            loadTrack(currentTrackIndex);
-            if (isPlaying) {
-                audio.play().catch(e => console.warn('autoplay error', e));
-            } else {
-                audio.pause();
-            }
-        }
+  let allVideos = [];
+  let activeCategory = "All";
 
-        // ---------- update playlist active highlight ----------
-        function updatePlaylistActive(index) {
-            const items = playlistContainer.querySelectorAll('.playlist-item');
-            items.forEach((item, i) => {
-                item.classList.toggle('active', i === index);
-            });
-        }
+  function render(){
+    const query = document.getElementById("search").value.trim().toLowerCase();
+    const grid = document.getElementById("grid");
+    const empty = document.getElementById("emptyState");
 
-        // ---------- render playlist UI ----------
-        function renderPlaylist() {
-            playlistContainer.innerHTML = '';
-            playlist.forEach((track, index) => {
-                const item = document.createElement('div');
-                item.className = 'playlist-item' + (index === currentTrackIndex ? ' active' : '');
-                item.innerHTML = `
-                    <span class="index">${String(index + 1).padStart(2, '0')}</span>
-                    <div class="p-info">
-                        <div class="p-title">${track.title}</div>
-                        <div class="p-artist">${track.artist}</div>
-                    </div>
-                    <span class="duration">${track.duration || '3:00'}</span>
-                `;
-                // click to play
-                item.addEventListener('click', () => {
-                    if (currentTrackIndex === index) {
-                        // if same track, toggle play
-                        togglePlay();
-                    } else {
-                        currentTrackIndex = index;
-                        loadTrack(currentTrackIndex);
-                        audio.play().catch(e => console.warn('play error', e));
-                        isPlaying = true;
-                        playIcon.className = 'fas fa-pause';
-                    }
-                });
-                playlistContainer.appendChild(item);
-            });
-        }
+    const filtered = allVideos.filter(v => {
+      const matchesQuery = !query ||
+        v.title.toLowerCase().includes(query) ||
+        (v.description || "").toLowerCase().includes(query);
+      const matchesCat = activeCategory === "All" || (v.category || "General") === activeCategory;
+      return matchesQuery && matchesCat;
+    });
 
-        // ---------- update progress from timeupdate ----------
-        function updateProgress() {
-            if (isDragging) return;
-            if (audio.duration && !isNaN(audio.duration)) {
-                const percent = (audio.currentTime / audio.duration) * 100;
-                progressFill.style.width = `${percent}%`;
-                currentTimeSpan.textContent = formatTime(audio.currentTime);
-                totalTimeSpan.textContent = formatTime(audio.duration);
-            } else {
-                // fallback
-                if (audio.currentTime) {
-                    currentTimeSpan.textContent = formatTime(audio.currentTime);
-                }
-            }
-        }
+    grid.innerHTML = "";
+    if (filtered.length === 0){
+      grid.style.display = "none";
+      empty.style.display = "block";
+      document.getElementById("emptyTitle").textContent = allVideos.length === 0 ? "No videos yet" : "No results found";
+      document.getElementById("emptyText").textContent = allVideos.length === 0
+        ? "Check back soon — new videos are added regularly."
+        : "Try a different search or filter.";
+      return;
+    }
+    grid.style.display = "grid";
+    empty.style.display = "none";
 
-        // ---------- progress bar drag (click & drag) ----------
-        function handleProgressClick(e) {
-            const rect = progressBar.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width;
-            const percent = Math.min(1, Math.max(0, x));
-            if (audio.duration) {
-                audio.currentTime = percent * audio.duration;
-                progressFill.style.width = `${percent * 100}%`;
-                currentTimeSpan.textContent = formatTime(audio.currentTime);
-            }
-        }
+    filtered.forEach(v => {
+      const tag = tagColor(v.category);
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="thumb-wrap" data-id="${v.id}">
+          <span class="cat-badge" style="color:${tag}">${(v.category || "GENERAL").toUpperCase()}</span>
+          <video src="${videoSrc(v)}" preload="metadata" muted></video>
+          <div class="play-overlay"><div class="play-btn">▶</div></div>
+        </div>
+        <div class="card-body">
+          <h3>${escapeHtml(v.title)}</h3>
+          <div class="card-foot">
+            <span class="meta mono">${formatDate(v.uploadDate)}</span>
+            <a class="dl-btn" href="${videoSrc(v)}" download onclick="event.stopPropagation()">⬇</a>
+          </div>
+        </div>`;
+      card.querySelector(".thumb-wrap").addEventListener("click", () => openLightbox(v));
+      grid.appendChild(card);
+    });
+  }
 
-        function handleProgressDrag(e) {
-            isDragging = true;
-            const rect = progressBar.getBoundingClientRect();
-            let x = (e.clientX - rect.left) / rect.width;
-            x = Math.min(1, Math.max(0, x));
-            progressFill.style.width = `${x * 100}%`;
-            if (audio.duration) {
-                const newTime = x * audio.duration;
-                currentTimeSpan.textContent = formatTime(newTime);
-            }
-        }
+  function renderFilters(){
+    const cats = ["All", ...new Set(allVideos.map(v => v.category || "General"))];
+    const box = document.getElementById("filters");
+    box.innerHTML = "";
+    cats.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "chip" + (c === activeCategory ? " active" : "");
+      btn.textContent = c;
+      btn.onclick = () => { activeCategory = c; renderFilters(); render(); };
+      box.appendChild(btn);
+    });
+  }
 
-        function handleProgressDragEnd(e) {
-            isDragging = false;
-            if (audio.duration) {
-                const rect = progressBar.getBoundingClientRect();
-                let x = (e.clientX - rect.left) / rect.width;
-                x = Math.min(1, Math.max(0, x));
-                audio.currentTime = x * audio.duration;
-                progressFill.style.width = `${x * 100}%`;
-                currentTimeSpan.textContent = formatTime(audio.currentTime);
-            }
-        }
+  function renderMarquee(){
+    const cats = [...new Set(allVideos.map(v => (v.category || "General").toUpperCase()))];
+    const items = cats.length ? cats : ["VIDEO VAULT", "FREE DOWNLOADS", "CYBER SECURITY", "TUTORIALS"];
+    const loop = [...items, ...items];
+    document.getElementById("marqueeTrack").innerHTML =
+      loop.map(i => `<span class="marquee-item mono">${i} <span class="dot">◆</span></span>`).join("");
+  }
 
-        // ---------- event listeners ----------
-        // controls
-        playBtn.addEventListener('click', togglePlay);
-        nextBtn.addEventListener('click', nextTrack);
-        prevBtn.addEventListener('click', prevTrack);
+  function openLightbox(v){
+    const vid = document.getElementById("lightboxVideo");
+    vid.src = videoSrc(v);
+    document.getElementById("lightboxTitle").textContent = v.title;
+    document.getElementById("lightboxDesc").textContent = v.description || "";
+    document.getElementById("lightboxDownload").href = videoSrc(v);
+    document.getElementById("lightbox").classList.add("open");
+  }
+  document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
+  document.getElementById("lightbox").addEventListener("click", (e) => {
+    if (e.target.id === "lightbox") closeLightbox();
+  });
+  function closeLightbox(){
+    const vid = document.getElementById("lightboxVideo");
+    vid.pause();
+    vid.removeAttribute("src");
+    vid.load();
+    document.getElementById("lightbox").classList.remove("open");
+  }
 
-        // audio events
-        audio.addEventListener('timeupdate', updateProgress);
-        audio.addEventListener('ended', () => {
-            // auto next
-            nextTrack();
-            // if still playing (we call nextTrack, and if isPlaying true it will autoplay)
-            // but if isPlaying false, we keep paused
-            if (isPlaying) {
-                audio.play().catch(e => console.warn('autoplay after end error', e));
-            }
-        });
+  document.getElementById("search").addEventListener("input", render);
 
-        // progress bar events
-        progressBar.addEventListener('click', handleProgressClick);
-        progressBar.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            handleProgressDrag(e);
-            document.addEventListener('mousemove', handleProgressDrag);
-            document.addEventListener('mouseup', (upEvent) => {
-                handleProgressDragEnd(upEvent);
-                document.removeEventListener('mousemove', handleProgressDrag);
-                document.removeEventListener('mouseup', this);
-                isDragging = false;
-            });
-        });
-
-        // optional: touch support for progress
-        progressBar.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = progressBar.getBoundingClientRect();
-            let x = (touch.clientX - rect.left) / rect.width;
-            x = Math.min(1, Math.max(0, x));
-            progressFill.style.width = `${x * 100}%`;
-            if (audio.duration) {
-                audio.currentTime = x * audio.duration;
-                currentTimeSpan.textContent = formatTime(audio.currentTime);
-            }
-        });
-
-        // load initial track
-        loadTrack(0);
-        renderPlaylist();
-
-        // set duration once metadata loaded
-        audio.addEventListener('loadedmetadata', () => {
-            totalTimeSpan.textContent = formatTime(audio.duration);
-        });
-
-        // handle audio error (fallback)
-        audio.addEventListener('error', (e) => {
-            console.warn('audio error', e);
-        });
-
-        // extra: keyboard shortcut (space) but optional
-        document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            if (e.code === 'Space') {
-                e.preventDefault();
-                togglePlay();
-            }
-        });
-
-        // clean up (optional)
-        window.addEventListener('beforeunload', () => {
-            audio.pause();
-            audio.src = '';
-        });
-
-        // fix for autoplay blocking: if user clicks on any playlist item, it's fine
-        console.log('🎵 wave player ready');
-    })();
+  fetch("videos.json?_=" + Date.now())
+    .then(r => r.json())
+    .then(data => {
+      allVideos = (Array.isArray(data) ? data : []).map((v, i) => ({ id: i, ...v }));
+      allVideos.sort((a,b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+      document.getElementById("statTotal").textContent = allVideos.length;
+      document.getElementById("statCats").textContent = new Set(allVideos.map(v => v.category || "General")).size;
+      document.getElementById("countLabel").textContent = allVideos.length + " Videos · Free Vault";
+      renderFilters();
+      renderMarquee();
+      render();
+    })
+    .catch(() => {
+      document.getElementById("emptyTitle").textContent = "Couldn't load the vault";
+      document.getElementById("emptyText").textContent = "videos.json not found or invalid.";
+      document.getElementById("emptyState").style.display = "block";
+      renderMarquee();
+    });
 </script>
 </body>
 </html>
