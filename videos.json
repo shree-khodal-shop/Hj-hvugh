@@ -1,10 +1,10 @@
-]
+[
   {
-    "title": "TEST VIDEO",
-    "description": "Password protected",
+    "title": "Video Title",
+    "description": "Short description (optional)",
     "category": "General",
     "filename": "video1.mp4",
-    "password": "70414",
+    "password": "70414"
     "uploadDate": "2026-08-13"
   }
 ]
