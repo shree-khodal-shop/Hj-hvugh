@@ -186,6 +186,46 @@
   }
 
   @media (max-width:520px){ .stats{gap:20px;} }
+
+  /* locked video */
+  .thumb-wrap.locked video{filter:blur(14px) brightness(0.45);}
+  .lock-overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px; background:rgba(10,6,5,0.4);
+  }
+  .lock-overlay .ic{font-size:22px;}
+  .lock-overlay span{font-size:10.5px; color:var(--paper); font-weight:700; letter-spacing:0.5px;
+    background:rgba(10,6,5,0.65); padding:3px 9px; border-radius:4px;}
+  .unlocked-badge{
+    position:absolute; top:8px; right:8px; background:rgba(10,6,5,0.75);
+    color:var(--red); font-size:9.5px; padding:4px 7px; border-radius:4px; backdrop-filter:blur(4px);
+  }
+
+  /* password modal */
+  .pw-modal{
+    position:fixed; inset:0; z-index:60; background:rgba(3,2,2,0.88);
+    display:none; align-items:center; justify-content:center; padding:24px;
+    backdrop-filter:blur(6px);
+  }
+  .pw-modal.open{display:flex;}
+  .pw-box{
+    background:var(--void-deep); border:1px solid var(--line); border-radius:10px;
+    padding:24px; width:100%; max-width:320px; text-align:center;
+  }
+  .pw-box .ic{font-size:26px;}
+  .pw-box h3{font-family:'Space Grotesk',sans-serif; font-size:16px; margin:10px 0 4px; color:var(--paper);}
+  .pw-box p{color:var(--muted); font-size:12.5px; margin:0 0 16px;}
+  .pw-box input{
+    width:100%; background:rgba(10,6,5,0.7); border:1px solid var(--line); color:var(--paper);
+    padding:10px 14px; border-radius:6px; font-size:14px; text-align:center; box-sizing:border-box;
+  }
+  .pw-error{color:#FF8A5B; font-size:11.5px; margin-top:8px; min-height:14px;}
+  .pw-actions{display:flex; gap:8px; margin-top:14px;}
+  .pw-actions button{
+    flex:1; padding:9px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer; border:none;
+  }
+  .pw-submit{background:var(--red); color:#1a0505;}
+  .pw-cancel{background:transparent; border:1px solid var(--line) !important; color:var(--muted);}
 </style>
 </head>
 <body>
@@ -212,12 +252,12 @@
 <main>
   <section class="hero">
     <p class="eyebrow mono">RESTRICTED ACCESS · FREE VAULT</p>
-    <h2 class="display">SCAM VIDEO 🔥🚨,<br/>one click away.</h2>
+    <h2 class="display">SCAM VIDEO,<br/>one click away.</h2>
     <p>This is the NEEV CYBER EXPERT video vault — watch online or download, free anytime.</p>
 
     <div class="warn-box">
       <span class="ic">⚠</span>
-      <p>SIRF ILLEGAL VIDEOS.</p>
+      <p>SIRF ILLEGAL VIDEOS..</p>
     </div>
 
     <div class="social-links">
@@ -260,6 +300,20 @@
       <p id="lightboxDesc"></p>
     </div>
     <a class="dl-btn" id="lightboxDownload" href="#" download>⬇ Download</a>
+  </div>
+</div>
+
+<div class="pw-modal" id="pwModal">
+  <div class="pw-box">
+    <div class="ic">🔒</div>
+    <h3 id="pwTitle">Protected Video</h3>
+    <p>Enter the password to watch this video.</p>
+    <input type="password" id="pwInput" placeholder="Password" />
+    <p class="pw-error" id="pwError"></p>
+    <div class="pw-actions">
+      <button class="pw-cancel" id="pwCancel">Cancel</button>
+      <button class="pw-submit" id="pwSubmit">Unlock</button>
+    </div>
   </div>
 </div>
 
@@ -378,6 +432,8 @@
 
   let allVideos = [];
   let activeCategory = "All";
+  const unlockedIds = new Set();
+  let pendingVideo = null;
 
   function render(){
     const query = document.getElementById("search").value.trim().toLowerCase();
@@ -407,22 +463,32 @@
 
     filtered.forEach(v => {
       const tag = tagColor(v.category);
+      const isLocked = !!v.password && !unlockedIds.has(v.id);
+      const isProtected = !!v.password;
       const card = document.createElement("div");
       card.className = "card";
       card.innerHTML = `
-        <div class="thumb-wrap" data-id="${v.id}">
+        <div class="thumb-wrap ${isLocked ? 'locked' : ''}" data-id="${v.id}">
           <span class="cat-badge" style="color:${tag}">${(v.category || "GENERAL").toUpperCase()}</span>
+          ${isProtected && !isLocked ? `<span class="unlocked-badge">🔓 unlocked</span>` : ""}
           <video src="${videoSrc(v)}" preload="metadata" muted></video>
-          <div class="play-overlay"><div class="play-btn">▶</div></div>
+          ${isLocked
+            ? `<div class="lock-overlay"><span class="ic">🔒</span><span>PASSWORD PROTECTED</span></div>`
+            : `<div class="play-overlay"><div class="play-btn">▶</div></div>`}
         </div>
         <div class="card-body">
           <h3>${escapeHtml(v.title)}</h3>
           <div class="card-foot">
             <span class="meta mono">${formatDate(v.uploadDate)}</span>
-            <a class="dl-btn" href="${videoSrc(v)}" download onclick="event.stopPropagation()">⬇</a>
+            ${isLocked
+              ? `<span class="dl-btn" style="opacity:0.6;">🔒</span>`
+              : `<a class="dl-btn" href="${videoSrc(v)}" download onclick="event.stopPropagation()">⬇</a>`}
           </div>
         </div>`;
-      card.querySelector(".thumb-wrap").addEventListener("click", () => openLightbox(v));
+      card.querySelector(".thumb-wrap").addEventListener("click", () => {
+        if (isLocked) openPasswordModal(v);
+        else openLightbox(v);
+      });
       grid.appendChild(card);
     });
   }
@@ -467,6 +533,40 @@
     vid.load();
     document.getElementById("lightbox").classList.remove("open");
   }
+
+  function openPasswordModal(v){
+    pendingVideo = v;
+    document.getElementById("pwTitle").textContent = v.title;
+    document.getElementById("pwInput").value = "";
+    document.getElementById("pwError").textContent = "";
+    document.getElementById("pwModal").classList.add("open");
+    setTimeout(() => document.getElementById("pwInput").focus(), 50);
+  }
+  function closePasswordModal(){
+    document.getElementById("pwModal").classList.remove("open");
+    pendingVideo = null;
+  }
+  function tryUnlock(){
+    if (!pendingVideo) return;
+    const entered = document.getElementById("pwInput").value;
+    if (entered === pendingVideo.password){
+      unlockedIds.add(pendingVideo.id);
+      const unlocked = pendingVideo;
+      closePasswordModal();
+      render();
+      openLightbox(unlocked);
+    } else {
+      document.getElementById("pwError").textContent = "Incorrect password, try again.";
+    }
+  }
+  document.getElementById("pwSubmit").addEventListener("click", tryUnlock);
+  document.getElementById("pwCancel").addEventListener("click", closePasswordModal);
+  document.getElementById("pwInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") tryUnlock();
+  });
+  document.getElementById("pwModal").addEventListener("click", (e) => {
+    if (e.target.id === "pwModal") closePasswordModal();
+  });
 
   document.getElementById("search").addEventListener("input", render);
 
