@@ -1,10 +1,17 @@
 [
   {
-    "title": "test video",
-    "description": "Short description (optional)",
+    "title": "Free Video",
+    "description": "No password",
     "category": "General",
     "filename": "video1.mp4",
-    "password": "70414"
+    "uploadDate": "2026-08-13"
+  },
+  {
+    "title": "Locked Video",
+    "description": "Password protected",
+    "category": "General",
+    "filename": "video2.mp4",
+    "password": "70414",
     "uploadDate": "2026-08-13"
   }
 ]
